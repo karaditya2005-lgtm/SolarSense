@@ -1,0 +1,51 @@
+{
+  "name": "GradientBoostingSolarEstimator",
+  "version": "v1.0.0",
+  "trainedAt": "2026-10-21T19:25:13.394393+00:00",
+  "datasetDescription": "Annual 8,760-hour hourly meteorological and photovoltaic output benchmark dataset for a 50 kW commercial PV array in New Delhi, India (28.6139\u00b0N, 77.2090\u00b0E). Includes GHI, DNI, DHI, temperature, cloud cover, relative humidity, wind speed, and astronomical solar elevation.",
+  "target": "capacityFactor",
+  "featureList": [
+    "ghiWm2",
+    "dniWm2",
+    "dhiWm2",
+    "temperatureC",
+    "cloudCoverPct",
+    "humidityPct",
+    "windSpeedMs",
+    "solarElevationDeg",
+    "hourSin",
+    "hourCos",
+    "daySin",
+    "dayCos"
+  ],
+  "hyperparameters": {
+    "n_estimators": 150,
+    "max_depth": 6,
+    "learning_rate": 0.08,
+    "min_samples_split": 5,
+    "random_state": 42
+  },
+  "metrics": {
+    "mae": 0.0007,
+    "rmse": 0.0014,
+    "r2": 0.9999,
+    "nmae": 0.07
+  },
+  "baselineComparison": {
+    "model": "LinearRegression(GHI)",
+    "mae": 0.009,
+    "rmse": 0.0135,
+    "r2": 0.994
+  },
+  "testSplit": {
+    "testSize": 0.2,
+    "testSamples": 1757,
+    "testPeriodStart": "2024-10-19 19:00:00+00:00",
+    "testPeriodEnd": "2024-12-31 23:00:00+00:00"
+  },
+  "physicalConstraintsApplied": [
+    "Solar elevation <= 0.0 forces power = 0.0 kW",
+    "Output strictly bounded within [0, capacityKw]",
+    "Linear system capacity scaling"
+  ]
+}
