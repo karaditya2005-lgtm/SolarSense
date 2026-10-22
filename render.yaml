@@ -1,0 +1,107 @@
+services:
+  # 1. Machine Learning Inference Microservice (Python FastAPI)
+  - type: web
+    name: solarsense-ml
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: ml
+    buildCommand: pip install --no-cache-dir -r requirements.txt
+    startCommand: uvicorn src.app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: ML_INTERNAL_KEY
+        generateValue: true
+      - key: ML_MODEL_VERSION
+        value: v1.0.0
+      - key: LOG_LEVEL
+        value: info
+
+  # 2. Express.js REST API Backend
+  - type: web
+    name: solarsense-backend
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: npm ci --only=production
+    startCommand: node src/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB_NAME
+        value: solarsense
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+      - key: BCRYPT_SALT_ROUNDS
+        value: 12
+      - key: CORS_ORIGINS
+        sync: false
+      - key: COOKIE_SECURE
+        value: true
+      - key: COOKIE_SAMESITE
+        value: none
+      - key: WEATHER_API_BASE_URL
+        value: https://api.open-meteo.com/v1/forecast
+      - key: WEATHER_GEOCODING_BASE_URL
+        value: https://geocoding-api.open-meteo.com/v1/search
+      - key: ML_SERVICE_URL
+        fromService:
+          type: web
+          name: solarsense-ml
+          property: host
+      - key: ML_INTERNAL_KEY
+        fromService:
+          type: web
+          name: solarsense-ml
+          envVarKey: ML_INTERNAL_KEY
+      - key: ML_TIMEOUT_MS
+        value: 10000
+      - key: FORECAST_MAX_HORIZON_DAYS
+        value: 7
+      - key: LOG_LEVEL
+        value: info
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX
+        value: 300
+      - key: ADMIN_SEED_NAME
+        value: System Administrator
+      - key: ADMIN_SEED_EMAIL
+        sync: false
+      - key: ADMIN_SEED_PASSWORD
+        sync: false
+
+  # 3. Production Frontend Static Site (Vite React SPA)
+  - type: web
+    name: solarsense-frontend
+    runtime: static
+    region: oregon
+    plan: free
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: solarsense-backend
+          property: url
+          format: "%s/api"
+      - key: VITE_HERO_IMAGE
+        value: /images/hero-solar.jpg
